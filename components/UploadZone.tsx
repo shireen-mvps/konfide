@@ -47,9 +47,11 @@ export default function UploadZone({
       onDragLeave={() => setDragging(false)}
       onDrop={handleDrop}
       onClick={() => !uploading && inputRef.current?.click()}
-      className={`relative border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all ${
-        dragging ? "border-indigo-400 bg-indigo-50" : "border-gray-300 hover:border-indigo-400 hover:bg-indigo-50/40"
-      } ${uploading ? "pointer-events-none opacity-60" : ""}`}
+      className={`relative border-2 border-dashed rounded-2xl p-7 text-center cursor-pointer transition-all ${
+        dragging
+          ? "border-k-accent/50 bg-k-accent/[0.06]"
+          : "border-white/10 hover:border-white/20 hover:bg-white/[0.02]"
+      } ${uploading ? "pointer-events-none opacity-70" : ""}`}
     >
       <input
         ref={inputRef}
@@ -59,11 +61,15 @@ export default function UploadZone({
         onChange={(e) => { const file = e.target.files?.[0]; if (file) onUpload(file); }}
       />
 
-      <div className="text-4xl mb-3">{uploading ? "⏳" : "📄"}</div>
-
       {uploading ? (
         <div className="flex flex-col items-center gap-3">
-          <p className="text-sm font-medium text-indigo-600">{uploadStep ?? "Processing PDF..."}</p>
+          <div className="w-10 h-10 rounded-xl bg-k-accent/10 flex items-center justify-center">
+            <svg className="w-5 h-5 text-k-accent animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+          </div>
+          <p className="text-sm font-medium text-k-accent">{uploadStep ?? "Processing PDF..."}</p>
           <div className="flex items-center gap-2">
             {(["extracting", "chunking", "indexing"] as UploadStepKey[]).map((s) => {
               const stepIndex = UPLOAD_STEPS.indexOf(s);
@@ -72,31 +78,44 @@ export default function UploadZone({
               const isCurrent = activeStep === s;
               return (
                 <div key={s} className="flex items-center gap-1.5">
-                  <div className={`w-2 h-2 rounded-full transition-all ${
-                    isDone ? "bg-indigo-500" : isCurrent ? "bg-indigo-400 animate-pulse" : "bg-gray-200"
+                  <div className={`w-1.5 h-1.5 rounded-full transition-all ${
+                    isDone ? "bg-k-accent" : isCurrent ? "bg-k-accent animate-pulse" : "bg-white/10"
                   }`} />
-                  <span className={`text-xs ${isCurrent ? "text-indigo-600 font-medium" : isDone ? "text-indigo-400" : "text-gray-300"}`}>
+                  <span className={`text-xs ${
+                    isCurrent ? "text-k-accent font-medium" : isDone ? "text-k-accent/60" : "text-k-dim"
+                  }`}>
                     {STEP_LABELS[s]}
                   </span>
-                  {s !== "indexing" && <span className="text-gray-200 text-xs">→</span>}
+                  {s !== "indexing" && <span className="text-white/10 text-xs">›</span>}
                 </div>
               );
             })}
           </div>
         </div>
       ) : doc ? (
-        <div className="flex flex-col items-center gap-1">
-          <p className="text-sm font-semibold text-indigo-800">{doc.filename}</p>
-          <p className="text-xs text-indigo-400">{doc.pages} pages · {doc.chunks} chunks indexed</p>
-          <p className="text-xs text-gray-400 mt-1">Drop or click to replace</p>
+        <div className="flex flex-col items-center gap-1.5">
+          <div className="w-10 h-10 rounded-xl bg-k-accent/10 flex items-center justify-center mb-1">
+            <svg className="w-5 h-5 text-k-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+            </svg>
+          </div>
+          <p className="text-sm font-semibold text-k-text">{doc.filename}</p>
+          <p className="text-xs text-k-muted">{doc.pages} pages · {doc.chunks} chunks indexed</p>
+          <p className="text-xs text-k-dim mt-0.5">Drop or click to replace</p>
         </div>
       ) : (
-        <>
-          <p className="text-sm font-medium text-gray-700">
-            Drop your PDF here or <span className="text-indigo-600 underline">browse</span>
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-10 h-10 rounded-xl bg-white/[0.05] flex items-center justify-center mb-1">
+            <svg className="w-5 h-5 text-k-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+            </svg>
+          </div>
+          <p className="text-sm font-medium text-k-muted">
+            Drop your PDF here or{" "}
+            <span className="text-k-accent underline underline-offset-2">browse</span>
           </p>
-          <p className="text-xs text-gray-400 mt-1">PDF only · Max 10MB</p>
-        </>
+          <p className="text-xs text-k-dim">PDF only · Max 10MB</p>
+        </div>
       )}
     </div>
   );

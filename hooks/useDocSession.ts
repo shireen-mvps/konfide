@@ -5,8 +5,30 @@ import { useChat } from "ai/react";
 import type { DocMeta, StoredMessage } from "@/types";
 import { generateDocId, loadStorage, STORAGE_KEY } from "@/lib/storage";
 import { useSources } from "@/hooks/useSources";
+import { createClient } from "@/lib/supabase/client";
+import type { User } from "@supabase/supabase-js";
+
+async function saveDocToSupabase(docId: string, meta: DocMeta) {
+  await fetch("/api/documents", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ docId, meta }),
+  }).catch(() => {});
+}
+
+async function fetchDocsFromSupabase(): Promise<Record<string, DocMeta>> {
+  try {
+    const res = await fetch("/api/documents");
+    const { docs } = await res.json();
+    return docs ?? {};
+  } catch {
+    return {};
+  }
+}
 
 export function useDocSession() {
+  const [user, setUser] = useState<User | null>(null);
+
   const [activeDocId, setActiveDocId] = useState<string>(() => {
     if (typeof window !== "undefined") {
       return loadStorage()?.activeDocId ?? generateDocId();
@@ -45,7 +67,45 @@ export function useDocSession() {
     })(),
   });
 
-  // Persist all state to localStorage on change
+  // Auth: check session on mount, load docs from Supabase if signed in
+  useEffect(() => {
+    const supabase = createClient();
+
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      setUser(user);
+      if (user) {
+        const supabaseDocs = await fetchDocsFromSupabase();
+        if (Object.keys(supabaseDocs).length > 0) {
+          setDocs(supabaseDocs);
+          // If current active doc isn't in Supabase, switch to first available
+          if (!supabaseDocs[activeDocId]) {
+            setActiveDocId(Object.keys(supabaseDocs)[0]);
+            setMessages([]);
+          }
+        }
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      setUser(session?.user ?? null);
+      if (event === "SIGNED_IN" && session?.user) {
+        const supabaseDocs = await fetchDocsFromSupabase();
+        if (Object.keys(supabaseDocs).length > 0) {
+          setDocs(supabaseDocs);
+        }
+      }
+      if (event === "SIGNED_OUT") {
+        // Revert to whatever is in localStorage
+        const stored = loadStorage();
+        setDocs(stored?.docs ?? {});
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Persist to localStorage on every state change
   useEffect(() => {
     const allMessages: Record<string, StoredMessage[]> = {
       ...inactiveMessages,
@@ -53,6 +113,20 @@ export function useDocSession() {
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ activeDocId, docs, messages: allMessages }));
   }, [messages, docs, activeDocId, inactiveMessages]);
+
+  const signIn = async () => {
+    const supabase = createClient();
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}/api/auth/callback` },
+    });
+  };
+
+  const signOut = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    setUser(null);
+  };
 
   const switchDoc = (docId: string) => {
     if (docId === activeDocId) return;
@@ -104,12 +178,13 @@ export function useDocSession() {
           if (data.error) { setUploadError(data.error); return; }
           if (data.label) setUploadStep(data.label);
           if (data.success) {
-            setDocs((prev) => ({
-              ...prev,
-              [activeDocId]: { filename: data.filename, chunks: data.chunks, pages: data.pages },
-            }));
+            const docMeta: DocMeta = { filename: data.filename, chunks: data.chunks, pages: data.pages };
+            setDocs((prev) => ({ ...prev, [activeDocId]: docMeta }));
             setMessages([]);
             setUploadStep(null);
+
+            // Save to Supabase if signed in
+            if (user) saveDocToSupabase(activeDocId, docMeta);
 
             // Fire-and-forget: generate AI summary + questions in background
             fetch("/api/init-doc", {
@@ -120,13 +195,13 @@ export function useDocSession() {
               .then((r) => r.json())
               .then(({ summary, questions }) => {
                 if (summary || questions?.length) {
-                  setDocs((prev) => ({
-                    ...prev,
-                    [activeDocId]: { ...prev[activeDocId], summary, suggestedQuestions: questions },
-                  }));
+                  const updatedMeta: DocMeta = { ...docMeta, summary, suggestedQuestions: questions };
+                  setDocs((prev) => ({ ...prev, [activeDocId]: updatedMeta }));
+                  // Update Supabase with summary + questions
+                  if (user) saveDocToSupabase(activeDocId, updatedMeta);
                 }
               })
-              .catch(() => {}); // non-critical — silently ignore
+              .catch(() => {});
           }
         }
       }
@@ -139,14 +214,12 @@ export function useDocSession() {
   };
 
   const deleteDoc = async (docId: string) => {
-    // Clean up Upstash namespace
     await fetch("/api/delete", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ docId }),
     }).catch(() => {});
 
-    // Remove from local state
     setDocs((prev) => {
       const next = { ...prev };
       delete next[docId];
@@ -158,7 +231,6 @@ export function useDocSession() {
       return next;
     });
 
-    // If deleting the active doc, switch to first remaining or start fresh
     if (docId === activeDocId) {
       const remaining = Object.keys(docs).filter((id) => id !== docId);
       if (remaining.length > 0) {
@@ -192,6 +264,9 @@ export function useDocSession() {
   const sources = useSources(data);
 
   return {
+    user,
+    signIn,
+    signOut,
     activeDocId,
     activeDoc: docs[activeDocId] ?? null,
     docs,

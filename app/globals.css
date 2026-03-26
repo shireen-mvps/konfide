@@ -4,6 +4,76 @@
 
 @layer base {
   body {
-    @apply bg-gray-50 text-gray-900 antialiased;
+    background-color: #09090e;
+    color: #ede8dc;
+    -webkit-font-smoothing: antialiased;
   }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #3e3e52 transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: #3e3e52;
+    border-radius: 2px;
+  }
+}
+
+/* ─── Button glows ─── */
+
+.btn-glow {
+  transition: box-shadow 0.2s ease, background-color 0.2s ease;
+}
+.btn-glow:hover:not(:disabled) {
+  box-shadow:
+    0 0 8px rgba(232, 160, 32, 0.9),
+    0 0 24px rgba(232, 160, 32, 0.6),
+    0 0 48px rgba(232, 160, 32, 0.3);
+}
+
+.btn-glow-sm {
+  transition: box-shadow 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+.btn-glow-sm:hover {
+  box-shadow:
+    0 0 6px rgba(232, 160, 32, 0.7),
+    0 0 18px rgba(232, 160, 32, 0.35);
+}
+
+/* ─── Scroll reveal ─── */
+
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+[data-reveal].is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+[data-reveal][data-delay="1"] { transition-delay: 0.1s; }
+[data-reveal][data-delay="2"] { transition-delay: 0.22s; }
+[data-reveal][data-delay="3"] { transition-delay: 0.34s; }
+
+/* ─── Card glows ─── */
+
+.card-glow {
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.card-glow:hover {
+  border-color: rgba(232, 160, 32, 0.35) !important;
+  box-shadow:
+    0 0 0 1px rgba(232, 160, 32, 0.15),
+    0 0 20px rgba(232, 160, 32, 0.12),
+    0 0 50px rgba(232, 160, 32, 0.06);
 }
