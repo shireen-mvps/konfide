@@ -110,6 +110,23 @@ export function useDocSession() {
             }));
             setMessages([]);
             setUploadStep(null);
+
+            // Fire-and-forget: generate AI summary + questions in background
+            fetch("/api/init-doc", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ docId: activeDocId }),
+            })
+              .then((r) => r.json())
+              .then(({ summary, questions }) => {
+                if (summary || questions?.length) {
+                  setDocs((prev) => ({
+                    ...prev,
+                    [activeDocId]: { ...prev[activeDocId], summary, suggestedQuestions: questions },
+                  }));
+                }
+              })
+              .catch(() => {}); // non-critical — silently ignore
           }
         }
       }
@@ -118,6 +135,40 @@ export function useDocSession() {
     } finally {
       setUploading(false);
       setUploadStep(null);
+    }
+  };
+
+  const deleteDoc = async (docId: string) => {
+    // Clean up Upstash namespace
+    await fetch("/api/delete", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ docId }),
+    }).catch(() => {});
+
+    // Remove from local state
+    setDocs((prev) => {
+      const next = { ...prev };
+      delete next[docId];
+      return next;
+    });
+    setInactiveMessages((prev) => {
+      const next = { ...prev };
+      delete next[docId];
+      return next;
+    });
+
+    // If deleting the active doc, switch to first remaining or start fresh
+    if (docId === activeDocId) {
+      const remaining = Object.keys(docs).filter((id) => id !== docId);
+      if (remaining.length > 0) {
+        switchDoc(remaining[0]);
+      } else {
+        const newDocId = generateDocId();
+        setActiveDocId(newDocId);
+        setMessages([]);
+        setUploadError(null);
+      }
     }
   };
 
@@ -156,6 +207,7 @@ export function useDocSession() {
     handleUpload,
     switchDoc,
     startNewUpload,
+    deleteDoc,
     exportTranscript,
   };
 }

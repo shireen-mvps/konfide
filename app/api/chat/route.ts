@@ -17,10 +17,19 @@ export async function POST(req: Request) {
       return Response.json({ error: "No question provided." }, { status: 400 });
     }
 
+    // Build a richer retrieval query by combining recent user messages.
+    // This improves follow-up questions like "what about the fees?" or "tell me more."
+    const recentUserQuestions = (messages as { role: string; content: string }[])
+      .filter((m) => m.role === "user")
+      .slice(-3)
+      .map((m) => m.content)
+      .join(" ");
+    const retrievalQuery = recentUserQuestions || question;
+
     // Query Upstash Vector for the most relevant chunks
     const ns = vectorIndex.namespace(docId);
     const results = await ns.query({
-      data: question, // Upstash embeds this automatically
+      data: retrievalQuery,
       topK: 4,
       includeMetadata: true,
     });

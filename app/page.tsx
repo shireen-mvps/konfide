@@ -23,6 +23,7 @@ export default function Home() {
     handleUpload,
     switchDoc,
     startNewUpload,
+    deleteDoc,
     exportTranscript,
   } = useDocSession();
 
@@ -81,12 +82,21 @@ export default function Home() {
                 <p className="text-xs text-gray-400">Upload any PDF — menu, catalog, report, policy, manual.</p>
               </div>
               {activeDoc && (
-                <button
-                  onClick={startNewUpload}
-                  className="text-xs text-indigo-500 hover:text-indigo-700 font-medium whitespace-nowrap ml-2 flex-shrink-0"
-                >
-                  + New
-                </button>
+                <div className="flex items-center gap-2 ml-2 flex-shrink-0">
+                  <button
+                    onClick={startNewUpload}
+                    className="text-xs text-indigo-500 hover:text-indigo-700 font-medium whitespace-nowrap"
+                  >
+                    + New
+                  </button>
+                  <button
+                    onClick={() => deleteDoc(activeDocId)}
+                    title="Delete this document"
+                    className="text-xs text-gray-300 hover:text-red-400 transition-colors font-medium"
+                  >
+                    Delete
+                  </button>
+                </div>
               )}
             </div>
 
@@ -95,6 +105,13 @@ export default function Home() {
             {uploadError && (
               <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
                 ⚠️ {uploadError}
+              </div>
+            )}
+
+            {activeDoc?.summary && (
+              <div className="bg-indigo-50 border border-indigo-100 rounded-xl px-3 py-3">
+                <p className="text-xs font-semibold text-indigo-600 mb-1">Document summary</p>
+                <p className="text-xs text-gray-600 leading-relaxed">{activeDoc.summary}</p>
               </div>
             )}
 
@@ -111,7 +128,7 @@ export default function Home() {
               </div>
             )}
 
-            <DocumentLibrary docs={docs} activeDocId={activeDocId} onSwitch={switchDoc} />
+            <DocumentLibrary docs={docs} activeDocId={activeDocId} onSwitch={switchDoc} onDelete={deleteDoc} />
 
             <div className="border-t border-gray-100 pt-3">
               <p className="text-xs text-gray-400 leading-relaxed">
@@ -140,7 +157,10 @@ export default function Home() {
                   </p>
                   {activeDoc && (
                     <div className="flex flex-col gap-2 mt-2 w-full max-w-xs">
-                      {["What is this document about?", "Give me a summary.", "What are the key points?"].map((q) => (
+                      {(activeDoc.suggestedQuestions?.length
+                        ? activeDoc.suggestedQuestions.slice(0, 3)
+                        : ["What is this document about?", "Give me a summary.", "What are the key points?"]
+                      ).map((q) => (
                         <button
                           key={q}
                           onClick={() => setInput(q)}
@@ -149,6 +169,9 @@ export default function Home() {
                           {q}
                         </button>
                       ))}
+                      {!activeDoc.suggestedQuestions && (
+                        <p className="text-xs text-gray-400 animate-pulse">Generating suggestions...</p>
+                      )}
                     </div>
                   )}
                 </div>
