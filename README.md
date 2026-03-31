@@ -4,7 +4,7 @@
 
 **Konfide** is a full-stack RAG (Retrieval-Augmented Generation) application built for organisations that need AI-powered document Q&A without compromising on confidentiality. Upload any PDF — policy, contract, report, or manual — and get source-cited answers instantly. Nothing is sent to OpenAI. Nothing trains an AI model. Nothing leaves your stack.
 
-**Live demo:** [konfide on Vercel](https://ai-bo3b87p1g-shireens-projects-6d64f22e.vercel.app)
+**Live demo:** [konfide on Vercel](https://konfide-inky.vercel.app)
 
 ---
 
