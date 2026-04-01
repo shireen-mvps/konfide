@@ -1,10 +1,21 @@
 import { anthropic } from "@ai-sdk/anthropic";
 import { generateText } from "ai";
 import { vectorIndex } from "@/lib/upstash";
+import { uploadLimiter, getClientIP } from "@/lib/ratelimit";
 
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
+  // Rate limit check — shares the upload limit (3 per IP per 24h)
+  // init-doc is always triggered by an upload, so this is intentionally shared
+  const { success } = await uploadLimiter.limit(getClientIP(req));
+  if (!success) {
+    return Response.json(
+      { error: "RATE_LIMITED", remaining: 0 },
+      { status: 429 }
+    );
+  }
+
   try {
     const { docId } = await req.json();
     if (!docId) return Response.json({ error: "Missing docId." }, { status: 400 });

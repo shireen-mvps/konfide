@@ -73,6 +73,7 @@ export async function POST(req: Request) {
 
         const result = streamText({
           model: anthropic("claude-sonnet-4-6"),
+          maxTokens: 1024, // cap per-response cost — sufficient for RAG Q&A answers
           system: `You are a helpful assistant that answers questions based on the content of an uploaded document.
 
 Use ONLY the context provided below to answer the question.

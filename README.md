@@ -160,8 +160,8 @@ konfide/
 ### 1. Clone the repo
 
 ```bash
-git clone https://github.com/shireen-mvps/konfide.git
-cd konfide
+git clone https://github.com/shireen-mvps/konfide_rag.git
+cd konfide_rag
 ```
 
 ### 2. Install dependencies
