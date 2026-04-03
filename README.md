@@ -257,4 +257,4 @@ After deploying, update your Supabase OAuth redirect URL to `https://your-app.ve
 
 ---
 
-Built by [Shireen](https://github.com/shireen-mvps) · Powered by Claude Code + Upstash Vector
+Built by a Marketing professional specialising in applied AI. View the full portfolio of production-grade AI marketing tools at [aiwithshireen.com](https://aiwithshireen.com) or browse more projects on [GitHub](https://github.com/shireen-mvps).
