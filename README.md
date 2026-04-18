@@ -160,7 +160,7 @@ konfide/
 ### 1. Clone the repo
 
 ```bash
-git clone https://github.com/shireen-mvps/konfide_rag.git
+git clone https://github.com/shireen168/konfide_rag.git
 cd konfide_rag
 ```
 
@@ -257,4 +257,4 @@ After deploying, update your Supabase OAuth redirect URL to `https://your-app.ve
 
 ---
 
-Built by a Marketing professional specialising in applied AI. View the full portfolio of production-grade AI marketing tools at [aiwithshireen.com](https://aiwithshireen.com) or browse more projects on [GitHub](https://github.com/shireen-mvps).
+Built by a Marketing professional specialising in applied AI. View the full portfolio of production-grade AI marketing tools at [aiwithshireen.com](https://aiwithshireen.com) or browse more projects on [GitHub](https://github.com/shireen168).
